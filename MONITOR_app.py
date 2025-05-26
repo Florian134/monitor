@@ -7,6 +7,7 @@ import sys
 import platform
 import traceback
 import json
+import streamlit
 
 # Debug-Logger einrichten
 logging.basicConfig(
