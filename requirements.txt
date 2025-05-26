@@ -10,3 +10,7 @@ python-dotenv==1.0.0
 beautifulsoup4==4.12.2
 pyOpenSSL==24.0.0
 pytest==7.4.3 
+streamlit
+pandas
+matplotlib
+openpyxl
