@@ -1,0 +1,75 @@
+from bokeh.io import output_file, show
+from bokeh.models import ColumnDataSource, FactorRange, HoverTool, LabelSet
+from bokeh.plotting import figure
+from bokeh.transform import dodge
+import os, webbrowser
+
+# 1. Daten gemäß Statista-Dossiers
+brands = {
+    'adidas':        {'Awareness': 96, 'Popularity': 68, 'Usage': 64, 'Loyalty': 85, 'Buzz': 43},
+    'Nike':          {'Awareness': 97, 'Popularity': 65, 'Usage': 57, 'Loyalty': 86, 'Buzz': 34},
+    'Puma':          {'Awareness': 95, 'Popularity': 48, 'Usage': 38, 'Loyalty': 79, 'Buzz': 21},
+    'Fila':          {'Awareness': 90, 'Popularity': 26, 'Usage': 16, 'Loyalty': 62, 'Buzz': 12},
+    'Under Armour':  {'Awareness': 57, 'Popularity': 27, 'Usage': 22, 'Loyalty': 80, 'Buzz': 12}
+}
+
+metrics     = ['Awareness','Popularity','Usage','Loyalty','Buzz']
+brands_list = list(brands.keys())
+
+# 2. DataSource für Bokeh
+data = {'brand': brands_list}
+for m in metrics:
+    data[m] = [brands[b][m] for b in brands_list]
+source = ColumnDataSource(data)
+
+# 3. Setup Ausgabe
+html_path = "brand_kpi_comparison.html"
+output_file(html_path, title="Brand KPI Vergleich")
+
+# 4. Figure anlegen
+p = figure(x_range=FactorRange(*brands_list),
+           height=450, width=900,
+           title="Statista Brand KPIs – adidas vs. Wettbewerber",
+           toolbar_location=None)
+
+# 5. Balken hinzufügen mit Name für Hover
+offsets = {'Awareness': -0.4, 'Popularity': -0.2, 'Usage': 0.0, 'Loyalty': 0.2, 'Buzz': 0.4}
+colors  = {'Awareness': "#718dbf", 'Popularity': "#e84d60",
+           'Usage': "#c9d9d3", 'Loyalty': "#ddb7b1", 'Buzz': "#a3c1ad"}
+
+for m in metrics:
+    renderer = p.vbar(x=dodge('brand', offsets[m], range=p.x_range),
+                      top=m, width=0.18,
+                      source=source,
+                      color=colors[m],
+                      legend_label=m,
+                      name=m,
+                      muted_alpha=0.2)
+    # Wertbeschriftung
+    labels = LabelSet(x=dodge('brand', offsets[m], range=p.x_range),
+                      y=m, text=m, source=source,
+                      text_font_size="8pt", x_offset=-10, y_offset=2)
+    p.add_layout(labels)
+
+# 6. Interaktive Hover-Tooltips
+hover = HoverTool(tooltips=[
+    ("Marke", "@brand"),
+    ("KPI", "$name"),
+    ("Wert", "@$name%")
+])
+p.add_tools(hover)
+
+# 7. Achsen, Legende, Styling
+p.y_range.start    = 0
+p.yaxis.axis_label = "Score (%)"
+p.xaxis.axis_label = "Marke"
+p.xgrid.grid_line_color = None
+
+p.legend.location    = "top_left"
+p.legend.click_policy = "mute"
+p.title.text_font_size = "14pt"
+
+# 8. Rendern & Öffnen
+show(p)
+url = 'file://' + os.path.realpath(html_path)
+os.system(f'start {url}' if os.name == 'nt' else f'open "{url}"')
